@@ -23,6 +23,7 @@ A modern web-based interactive dashboard for stock market analysis and visualiza
 3. Run the dashboard:
 
     (In terminal)
-    streamlit run stock-vis.py
+    
+    Command: streamlit run stock-vis.py
 
 4. The dashboard will automatically open in your default web browser
