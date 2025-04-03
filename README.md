@@ -4,9 +4,11 @@
 A modern web-based interactive dashboard for stock market analysis and visualization.
 
 ## Features
--- Stock price and financial metrics tracking and trend visualization
+-- Stock price and financial metrics tracking and trend visualization with customizable timeline
 
 -- Stock performance comparison aginst competitors and index benchmark
+
+-- Real-time related stock news
 
 ## Technologies Used
 -- Python Steamlit
