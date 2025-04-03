@@ -22,7 +22,7 @@ A modern web-based interactive dashboard for stock market analysis and visualiza
 
     In terminal
    ```bash
-   pip install streamlit pandas yfinance plotly
+   pip install streamlit pandas yfinance plotly pytz
    ```
 
 3. Run the dashboard:
