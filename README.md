@@ -18,11 +18,14 @@ A modern web-based interactive dashboard for stock market analysis and visualiza
 
 2. Install required packages:
 
-    pip install streamlit pandas yfinance plotly
+    In terminal
+   ```bash
+   pip install streamlit pandas yfinance plotly
+   ```
 
 3. Run the dashboard:
 
-    (In terminal)
+    In terminal
     
    ```bash
    streamlit run stock-vis.py
