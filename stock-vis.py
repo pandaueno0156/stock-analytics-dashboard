@@ -77,9 +77,8 @@ def fetch_historical_eps(ticker):
         # Convert date column to datetime
         data['Date'] = pd.to_datetime(data['Date'])
 
-        print(f'data: {data}')
-
         return data
+    
     return None
 
 def calculate_ttm_pe_ratio(stock_df, eps_df):
@@ -121,7 +120,7 @@ def fetch_stock_data(stock, start, end):
     ticker = yf.Ticker(stock)
     stock_info = ticker.info
 
-    print(f'stock_info: {stock_info}')
+    # print(f'stock_info: {stock_info}')
 
     # Get specific financial data we need
     financial_data = {
