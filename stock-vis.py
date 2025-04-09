@@ -5,7 +5,7 @@ import pandas as pd
 from GoogleNews import GoogleNews
 from datetime import datetime
 import pytz
-
+import requests
 
 st.set_page_config(
     page_title = "Stock Analytics Dashboard",
@@ -27,6 +27,88 @@ st.title(f"{selected_stock} Stock Analytics Dashboard")
 # Sidebar Data Selection
 start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2021-01-01"))
 end_date = st.sidebar.date_input("End Date", pd.to_datetime("today"))
+
+@st.cache_data
+def fetch_historical_eps(ticker):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+
+    # Stock ticker dictionary
+    stocks_dict = {
+        "NVDA": "NVDIA",
+        "META": "meta-platforms",
+        "PLTR": "palantir-technologies",
+        "GOOGL": "alphabet",
+        "SHOP": "shopify",
+        "TSLA": "tesla",
+        "AMZN": "amazon"
+    }
+    ticker_full_name = stocks_dict[ticker]
+    url = f'https://www.macrotrends.net/stocks/charts/{ticker}/{ticker_full_name}/eps-earnings-per-share-diluted'
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        data = pd.read_html(response.text, skiprows=1)[1]
+        # Convert date column to datetime
+
+
+        first_line_date = data.columns[0]
+        first_line_eps = data.columns[1]
+
+        # Reset the column names to default
+        data.columns = range(len(data.columns))
+
+        # Rebane the first 2 columns
+        data = data.rename(columns={0: 'Date', 1: 'EPS'})
+
+        # Create a new first row
+        first_row = pd.DataFrame({
+            'Date': [first_line_date],
+            'EPS': [first_line_eps]
+        })
+
+        # Concate the first row with the rest of data
+        data = pd.concat([first_row, data], ignore_index=True)
+
+        # Clean EPS column
+        data['EPS'] = data['EPS'].str.replace("$", "").astype(float)
+
+        # Convert date column to datetime
+        data['Date'] = pd.to_datetime(data['Date'])
+
+        print(f'data: {data}')
+
+        return data
+    return None
+
+def calculate_ttm_pe_ratio(stock_df, eps_df):
+    # Create a copy of the stock prices dataframe
+    pe_df = stock_df.copy()
+    
+    pe_df['Date'] = pd.to_datetime(pe_df.index)
+
+    # Calculate TTM EPS for each date
+    pe_df['TTM_EPS'] = 0.0
+    pe_df['PE_Ratio'] = 0.0
+    count = 0
+
+    for date in pe_df['Date']:
+        
+        count += 1
+        last_4q_eps = eps_df[eps_df['Date'] <= date].iloc[0:4]['EPS']
+
+        if len(last_4q_eps) == 4:
+            ttm_eps = sum(last_4q_eps)
+            pe_df.loc[date, 'TTM_EPS'] = ttm_eps
+            # Calculate P/E ratio using closing price
+            close_price = pe_df.loc[date, 'Close']
+            # print(f"pe_df.iloc[0]: {pe_df.iloc[1]}")
+
+            pe_df.loc[date, 'PE_Ratio'] = round((pe_df.loc[date, 'Close'][selected_stock] / ttm_eps),2)
+
+    return pe_df
+
 
 @st.cache_data
 def fetch_stock_data(stock, start, end):
@@ -92,6 +174,9 @@ def get_ny_time_status():
 
 df, stock_info, financial_data = fetch_stock_data(selected_stock, start_date, end_date)
 
+eps_data_df = fetch_historical_eps(selected_stock)
+
+pe_df =  calculate_ttm_pe_ratio(df, eps_data_df)
 
 # Display market time and status
 col1, col2 = st.columns(2)
@@ -141,7 +226,7 @@ with col2:
     if market_status == 'After Hours':
         post_latest_price = stock_info.get('postMarketPrice', 'N/A')
         post_price_change = stock_info.get('postMarketChange', 'N/A')
-        if post_latest_price is not None and post_price_change is not None:
+        if post_latest_price != 'N/A' and post_price_change != 'N/A':
 
             st.metric(label="Post Stock Price", value=round(post_latest_price, 2), delta=f"{post_price_change:.2f}%")
         else:
@@ -149,7 +234,7 @@ with col2:
     elif market_status == 'Market Closed (Weekend)':
         post_latest_price = stock_info.get('postMarketPrice', 'N/A')
         post_price_change = stock_info.get('postMarketChange', 'N/A')
-        if post_latest_price is not None and post_price_change is not None:
+        if post_latest_price != 'N/A' and post_price_change != 'N/A':
 
             st.metric(label="Post Stock Price", value=round(post_latest_price, 2), delta=f"{post_price_change:.2f}%")
         else:
@@ -157,8 +242,7 @@ with col2:
     elif market_status == 'Pre-Market':
         pre_latest_price = stock_info.get('preMarketPrice', 'N/A')
         pre_price_change = stock_info.get('preMarketChange', 'N/A')
-        if pre_latest_price is not None and pre_price_change is not None:
-
+        if pre_latest_price != 'N/A' and pre_price_change != 'N/A':
             st.metric(label="Pre Stock Price", value=round(pre_latest_price, 2), delta=f"{pre_price_change:.2f}%")
         else:
             st.metric(label="Pre Stock Price", value='N/A', delta=None)
@@ -231,7 +315,7 @@ with col11:
 df['MA50'] = df['MA50'].squeeze()
 df['MA200'] = df['MA200'].squeeze()
 
-# Present Data & Plot
+### Present Data & Plot
 st.write("")
 st.write(f"**{selected_stock} Stock Price Trend**")
 chart_data = pd.DataFrame({
@@ -247,7 +331,15 @@ st.write(f"**Stock Volume**")
 st.line_chart(df['Volume'])
 st.caption("Daily stock volume")
 
-# Stock Comparison Section
+
+### P/E Trend Graph
+st.write("---")
+st.write(f"**{selected_stock} Trailing P/E Ratio Graph**")
+st.line_chart(pe_df['PE_Ratio'])
+st.caption("Daily P/E Ratio")
+
+
+### Stock Comparison Section
 st.write("---")
 st.write("**Stock Performance Comparison**")
 
@@ -300,7 +392,7 @@ if compare_stock1 and compare_stock2:
     st.caption("Price percentage change from start date (%)")
 
 
-# News Section
+### News Section
 st.write("---")
 st.write(f"**Recent News for {selected_stock}**")
 
