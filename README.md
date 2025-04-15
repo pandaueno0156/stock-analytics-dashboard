@@ -1,19 +1,21 @@
 # stock-analytics-dashboard
 
 ## Overview
-A modern web-based interactive dashboard for stock market analysis and visualization.
+A modern web-based interactive dashboard for stock market analysis and visualization
 
 ## Features
--- Stock price and financial metrics tracking and trend visualization with customizable timeline
+- Stock price and financial metrics tracking and trend visualization with customizable timeline
 
--- Stock performance comparison aginst competitors and index benchmark
+- Stock performance comparison aginst competitors and index benchmark
 
--- Real-time related stock news
+- Real-time related stock news
 
 ## Technologies Used
--- Python Steamlit
+- Python Steamlit
 
--- yfinance API
+- yfinance API
+
+- GoogleNews API
 
 ## Quick Start
 1. Clone the repository or download the files
